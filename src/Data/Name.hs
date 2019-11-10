@@ -53,10 +53,10 @@ partitions :: [a] -> [([a], [a])]
 partitions xs = [splitAt x xs| x <- [1 .. (length xs - 1)]]
 
 inNames    :: [String] -> Bag -> Bool
-inNames    ns bag = all (\n -> inNames' n bag || not (inSurnames' n bag)) ns
+inNames    ns bag = all (\n -> inNames' n bag || not (inSurnames' n bag)) (middle ns) && all (`inNames'` bag) (extremes ns)
 
 inSurnames :: [String] -> Bag -> Bool
-inSurnames ns bag = all (\n -> inSurnames' n bag || not (inNames' n bag)) ns
+inSurnames ns bag = all (\n -> inSurnames' n bag || not (inNames' n bag)) (middle ns) && all (`inSurnames'` bag) (extremes ns)
 
 inNames'    n = elem n . names
 inSurnames' n = elem n . surnames
@@ -65,3 +65,9 @@ isName, isSurname, isAmbiguous :: [String] -> Bag -> Bool
 isName      n bag = inNames n bag && not (inSurnames n bag)
 isSurname   n bag = inSurnames n bag && not (inNames n bag)
 isAmbiguous n bag = inSurnames n bag && inNames n bag || not (inSurnames n bag) && not (inNames n bag)
+
+middle (_:x:xs) = tail (x:xs)
+middle _        = []
+
+extremes (x:y:xs) = [x, last (y:xs)]
+extremes (x:_)    = [x]
