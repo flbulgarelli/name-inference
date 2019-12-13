@@ -17,6 +17,7 @@ data Bag = Bag { names :: [String], surnames :: [String] } deriving Show
 data Uncertain a
   = Sure a
   | Unsure a
+  | Impossible
   deriving (Show, Eq)
 
 data Name
@@ -26,11 +27,46 @@ data Name
 
 data FixedName = FixedName (Uncertain [String]) (Uncertain [String]) deriving (Eq, Show)
 
+data Class = N | S | A | UN | US | I deriving Eq
+
+classify :: Bag -> String -> Class
+classify bag n
+  | inNames' n bag && not (inSurnames' n bag) = N
+  | inSurnames' n bag && not (inNames' n bag) = S
+  | otherwise                         = A
+
+classifyMany :: Bag -> [String] -> Class
+classifyMany bag =  foldClass . map (classify bag)
+
+
+foldClass :: [Class] -> Class
+foldClass xs@(c:cs)   = foo c (foldMiddleClass c cs) (lasthy xs)
+
+foo h m l | m /= I && h /= l = un h
+foo h m l = m
+
+un N = UN
+un S = US
+un A = A
+
+foldMiddleClass c []     = c
+foldMiddleClass A (c:cs) = foldMiddleClass c cs
+foldMiddleClass r [A]    = r
+foldMiddleClass r [c]    | r == c = r
+foldMiddleClass _ [_]    = I
+foldMiddleClass r (c:cs) | foldMiddleClass r cs == r = r
+foldMiddleClass _ _      = I
+
+lasthy [x] = x
+lasthy xs  = last xs
+
 confidence :: FixedName -> Int
-confidence (FixedName (Sure _) (Sure _))  = 2
-confidence (FixedName _        (Sure _))  = 1
-confidence (FixedName (Sure _) _       )  = 1
-confidence _                              = 0
+confidence (FixedName (Sure _)   (Sure _))   = 2
+confidence (FixedName _          (Sure _))   = 1
+confidence (FixedName (Sure _)   _       )   = 1
+confidence (FixedName (Unsure _) _       )   = 0
+confidence (FixedName _          (Unsure _)) = 0
+confidence (FixedName _          _         ) = -1
 
 fix :: Bag -> Name -> FixedName
 fix bag = maximumBy (compare `on` confidence) . fixes bag
@@ -40,14 +76,44 @@ fixes bag (NameAndSurname tentativeName tentativeSurname) = [fix' bag tentativeN
 fixes bag (FullName tenatives)                            = map (uncurry (fix' bag)) . partitions $ tenatives
 
 fix' :: Bag -> [String] -> [String] -> FixedName
-fix' bag tentativeName tentativeSurname
-  | isName tentativeName       bag && isSurname tentativeSurname   bag = FixedName (Sure tentativeName) (Sure tentativeSurname)
-  | isName tentativeSurname    bag && isSurname tentativeName      bag = FixedName (Sure tentativeSurname) (Sure tentativeName)
-  | isName tentativeName       bag && isAmbiguous tentativeSurname bag = FixedName (Sure tentativeName) (Unsure tentativeSurname)
-  | isName tentativeSurname    bag && isAmbiguous tentativeName    bag = FixedName (Sure tentativeSurname) (Unsure tentativeName)
-  | isSurname tentativeName    bag && isAmbiguous tentativeSurname bag = FixedName (Unsure tentativeSurname) (Sure tentativeName)
-  | isSurname tentativeSurname bag && isAmbiguous tentativeName    bag = FixedName (Unsure tentativeName) (Sure tentativeSurname)
-  | otherwise                                                          = FixedName (Unsure tentativeName) (Unsure tentativeSurname)
+fix' bag tentativeName tentativeSurname = fixClass (classifyMany bag tentativeName) (classifyMany bag tentativeSurname)
+  where
+    fixClass N N = FixedName Impossible Impossible
+    fixClass N UN = FixedName Impossible Impossible
+    fixClass N S = FixedName (Sure tentativeName) (Sure tentativeSurname)
+    fixClass N US = FixedName (Sure tentativeName) (Unsure tentativeSurname)
+    fixClass N A = FixedName (Sure tentativeName) (Unsure tentativeSurname)
+    fixClass N I = FixedName (Sure tentativeName) Impossible
+    fixClass UN N = FixedName Impossible Impossible
+    fixClass UN UN = FixedName Impossible Impossible
+    fixClass UN S = FixedName (Unsure tentativeName) (Sure tentativeSurname)
+    fixClass UN US = FixedName (Unsure tentativeName) (Unsure tentativeSurname)
+    fixClass UN A = FixedName (Unsure tentativeName) (Unsure tentativeSurname)
+    fixClass UN I = FixedName (Unsure tentativeName) Impossible
+    fixClass S N = FixedName (Sure tentativeSurname) (Sure tentativeName)
+    fixClass S UN = FixedName (Sure tentativeSurname) (Unsure tentativeName)
+    fixClass S S = FixedName Impossible Impossible
+    fixClass S US = FixedName Impossible Impossible
+    fixClass S A = FixedName (Unsure tentativeSurname) (Sure tentativeName)
+    fixClass S I = FixedName Impossible (Sure tentativeName)
+    fixClass US N = FixedName (Sure tentativeSurname) (Unsure tentativeName)
+    fixClass US UN = FixedName (Unsure tentativeSurname) (Unsure tentativeName)
+    fixClass US S = FixedName Impossible Impossible
+    fixClass US US = FixedName Impossible Impossible
+    fixClass US A = FixedName (Unsure tentativeSurname) (Unsure tentativeName)
+    fixClass US I = FixedName Impossible (Unsure tentativeName)
+    fixClass A N = FixedName (Sure tentativeSurname) (Unsure tentativeName)
+    fixClass A UN = FixedName (Unsure tentativeSurname) (Unsure tentativeName)
+    fixClass A S = FixedName (Unsure tentativeName) (Sure tentativeSurname)
+    fixClass A US = FixedName (Unsure tentativeName) (Unsure tentativeSurname)
+    fixClass A A = FixedName (Unsure tentativeName) (Unsure tentativeSurname)
+    fixClass A I = FixedName (Unsure tentativeName) Impossible
+    fixClass I N = FixedName (Sure tentativeSurname) Impossible
+    fixClass I UN = FixedName (Unsure tentativeSurname) Impossible
+    fixClass I S = FixedName Impossible (Sure tentativeSurname)
+    fixClass I US = FixedName Impossible (Unsure tentativeSurname)
+    fixClass I A = FixedName Impossible (Unsure tentativeSurname)
+    fixClass I I = FixedName Impossible Impossible
 
 partitions :: [a] -> [([a], [a])]
 partitions xs = [splitAt x xs| x <- [1 .. (length xs - 1)]]

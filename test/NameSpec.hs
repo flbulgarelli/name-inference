@@ -3,54 +3,95 @@ module NameSpec (spec) where
 import  Test.Hspec
 import  Data.Name
 
-sampleBag = Bag [
-    "Daniela", "Alfonso", "Rocío", "Federico", "Juan", "María", "Beatriz", "Florencia", "Ana", "Gonzalo", "Rodrigo", "Franco", "Washignton"] [
-    "Scarpa", "Alfonso", "Villani", "Tata", "Rodrigo", "Gonzalo", "Finzi", "Rodríguez", "Washignton"]
+sampleBag = Bag names surnames
+  where
+    names = [
+      "Franco",
+      "Leonardo",
+      "Agustín",
+      "Federico",
+      "Alfredo",
+      "Laura",
+      "Mónica",
+      "Judith",
+      "Nadia",
+      "Giselle",
+      "Julián",
+      "Luis",
+      "Tomás",
+      "Rocío",
+      "Carolina",
+      "Luisa",
+      "Gustavo",
+      "Ernesto",
+      "Ivana",
+      "Daniela",
+      "Felipe",
+      "Andres",
+      "Daniela",
+      "Veronica",
+      "Rodrigo",
+      "Alfonso"
+      ]
+
+    surnames = [
+      "Bulgarelli",
+      "Pina",
+      "Scarpa",
+      "Mangifesta",
+      "Gruszczanski",
+      "Finzi",
+      "Berbel",
+      "Alt",
+      "Cannavó",
+      "Gonzalez",
+      "Baldino",
+      "Trucco",
+      "Feldfeber",
+      "Kivelsky",
+      "Szklanny",
+      "Calvo",
+      "Villani",
+      "Alfonso",
+      "Rodrigo"
+      ]
+
 run = fix sampleBag
 
 spec :: Spec
 spec = do
   describe "fix" $ do
-    describe "just two words" $ do
-      it "N S" $ run (NameAndSurname ["Federico"] ["Scarpa"]) `shouldBe` (FixedName (Sure ["Federico"]) (Sure ["Scarpa"]))
-      it "S N" $ run (NameAndSurname ["Villani"] ["Daniela"]) `shouldBe` (FixedName (Sure ["Daniela"]) (Sure ["Villani"]))
-      it "O O" $ run (NameAndSurname ["Rodrigo"] ["Alfonso"]) `shouldBe` (FixedName (Unsure ["Rodrigo"]) (Unsure ["Alfonso"]))
-      it "O O" $ run (NameAndSurname ["Alfonso"] ["Rodrigo"]) `shouldBe` (FixedName (Unsure ["Alfonso"]) (Unsure ["Rodrigo"]))
-      it "N O" $ run (NameAndSurname ["Rocío"] ["Rodrigo"]) `shouldBe` (FixedName (Sure ["Rocío"]) (Unsure ["Rodrigo"]))
-      it "O N" $ run (NameAndSurname ["Carlos"] ["Daniela"]) `shouldBe` (FixedName (Sure ["Daniela"]) (Unsure ["Carlos"]))
-      it "O S" $ run (NameAndSurname ["Rodrigo"] ["Finzi"]) `shouldBe` (FixedName (Unsure ["Rodrigo"]) (Sure ["Finzi"]))
-      it "S O" $ run (NameAndSurname ["Finzi"] ["Gonzalo"]) `shouldBe` (FixedName (Unsure ["Gonzalo"]) (Sure ["Finzi"]))
+    it "N S" $ run (NameAndSurname ["Rocío"] ["Gonzalez"]) `shouldBe` (FixedName (Sure ["Rocío"]) (Sure ["Gonzalez"]))
+    it "S N" $ run (NameAndSurname ["Calvo"] ["Felipe"]) `shouldBe` (FixedName (Sure ["Felipe"]) (Sure ["Calvo"]))
 
-      it "S S" $ run (NameAndSurname ["Scarpa"] ["Tata"]) `shouldBe` (FixedName (Unsure ["Scarpa"]) (Unsure ["Tata"]))
+    it "NN S" $ run (NameAndSurname ["Federico", "Alfredo"] ["Scarpa"]) `shouldBe` (FixedName (Sure ["Federico", "Alfredo"]) (Sure ["Scarpa"]))
+    it "S NN" $ run (NameAndSurname ["Scarpa"] ["Federico", "Alfredo"]) `shouldBe` (FixedName (Sure ["Federico", "Alfredo"]) (Sure ["Scarpa"]))
 
-    describe "more than two words" $ do
-      it "NO S"  $ run (NameAndSurname ["Federico", "Rodrigo"] ["Scarpa"]) `shouldBe` (FixedName (Sure ["Federico", "Rodrigo"]) (Sure ["Scarpa"]))
-      it "NO SS" $ run (NameAndSurname ["Federico", "Rodrigo"] ["Scarpa", "Rodríguez"]) `shouldBe` (FixedName (Sure ["Federico", "Rodrigo"]) (Sure ["Scarpa", "Rodríguez"]))
-      it "NO SO" $ run (NameAndSurname ["Franco", "Washignton"] ["Tata", "Gonzalo"]) `shouldBe` (FixedName (Sure ["Franco", "Washignton"]) (Sure ["Tata", "Gonzalo"]))
-      it "OS N"  $ run (NameAndSurname ["Washignton", "Tata"] ["Ana"]) `shouldBe` (FixedName (Sure ["Ana"]) (Sure ["Washignton", "Tata"]))
+    it "N SS" $ run (NameAndSurname ["Ivana"] ["Feldfeber", "Kivelsky"]) `shouldBe` (FixedName (Sure ["Ivana"]) (Sure ["Feldfeber", "Kivelsky"]))
+    it "SS N" $ run (NameAndSurname ["Feldfeber", "Kivelsky"] ["Ivana"]) `shouldBe` (FixedName (Sure ["Ivana"]) (Sure ["Feldfeber", "Kivelsky"]))
 
-    describe "full name" $ do
-      it "OSN"  $ run (FullName ["Federico", "Scarpa"]) `shouldBe` (FixedName (Sure ["Federico"]) (Sure ["Scarpa"]))
-      it "OSN"  $ run (FullName ["Villani", "Daniela"]) `shouldBe` (FixedName (Sure ["Daniela"]) (Sure ["Villani"]))
-      it "OSN"  $ run (FullName ["Florencia", "Tata", "Finzi"]) `shouldBe` (FixedName (Sure ["Florencia"]) (Sure ["Tata", "Finzi"]))
-      it "OSN"  $ run (FullName ["Rodrigo", "Juan", "Alfonso"]) `shouldBe` (FixedName (Sure ["Rodrigo", "Juan"]) (Unsure ["Alfonso"]))
+    it "S S" $ run (NameAndSurname ["Bulgarelli"] ["Alt"]) `shouldBe` (FixedName Impossible Impossible)
 
-      it "NNNSOO"  $ run (FullName ["Ana", "María", "Beatriz", "Rodríguez", "Alfonso", "De la Cruz"]) `shouldBe` (
-                                                                                                          FixedName (Sure ["Ana", "María", "Beatriz"]) (Unsure ["Rodríguez", "Alfonso", "De la Cruz"]))
+    it "N N" $ run (NameAndSurname ["Laura"] ["Giselle"]) `shouldBe` (FixedName Impossible Impossible)
 
-      it "NNNSOO"  $ run (FullName ["Ana", "María", "Beatriz", "Rodríguez", "De la Cruz", "Alfonso"]) `shouldBe` (
-                                                                                                          FixedName (Sure ["Ana", "María", "Beatriz"]) (Sure ["Rodríguez", "De la Cruz", "Alfonso"]))
+    it "A A" $ run (NameAndSurname ["Rodrigo"] ["Alfonso"]) `shouldBe` FixedName (Unsure ["Rodrigo"]) (Unsure ["Alfonso"])
+    it "A A" $ run (NameAndSurname ["Alfonso"] ["Rodrigo"]) `shouldBe` FixedName (Unsure ["Alfonso"]) (Unsure ["Rodrigo"])
 
-      it "NONS"  $ run (FullName ["Ana", "Mar", "Beatriz", "Rodríguez"]) `shouldBe` (FixedName (Sure ["Ana", "Mar", "Beatriz"]) (Sure ["Rodríguez"]))
-      it "NNOS"  $ run (FullName ["Ana", "Beatriz", "Bea", "Rodríguez"]) `shouldBe` (FixedName (Unsure ["Ana", "Beatriz", "Bea"]) (Sure ["Rodríguez"]))
-      it "NNOS"  $ run (FullName ["Rodríguez", "Ana", "Beatriz", "Bea"]) `shouldBe` (FixedName (Unsure ["Ana", "Beatriz", "Bea"]) (Sure ["Rodríguez"]))
+    it "A AS" $ run (NameAndSurname ["Alfonso"] ["Rodrigo", "Trucco"] ) `shouldBe` FixedName (Unsure ["Alfonso"]) (Unsure ["Rodrigo", "Trucco"])
+    it "AS A" $ run (NameAndSurname ["Rodrigo", "Trucco"] ["Alfonso"]) `shouldBe` FixedName (Unsure ["Alfonso"]) (Unsure ["Rodrigo", "Trucco"])
 
+    it "A SA" $ run (NameAndSurname ["Alfonso"] ["Pina", "Rodrigo"] ) `shouldBe` FixedName (Unsure ["Alfonso"]) (Unsure ["Pina", "Rodrigo"])
+    it "SA A" $ run (NameAndSurname ["Pina", "Rodrigo"] ["Alfonso"]) `shouldBe` FixedName (Unsure ["Alfonso"]) (Unsure ["Pina", "Rodrigo"])
 
-  describe "fixes" $ do
-    it "" $  do
-      fixes sampleBag (FullName ["Ana", "María", "Beatriz", "Rodríguez", "Alfonso", "De la Cruz"]) `shouldBe` [
-        FixedName (Sure ["Ana"]) (Unsure ["María","Beatriz","Rodríguez","Alfonso","De la Cruz"]),
-        FixedName (Sure ["Ana","María"]) (Unsure ["Beatriz","Rodríguez","Alfonso","De la Cruz"]),
-        FixedName (Sure ["Ana","María","Beatriz"]) (Unsure ["Rodríguez","Alfonso","De la Cruz"]),
-        FixedName (Unsure ["Ana","María","Beatriz","Rodríguez"]) (Unsure ["Alfonso","De la Cruz"]),
-        FixedName (Unsure ["Ana","María","Beatriz","Rodríguez","Alfonso"]) (Unsure ["De la Cruz"])]
+    it "AN AS" $ run (NameAndSurname ["Alfonso", "Julián"] ["Rodrigo", "Trucco"] ) `shouldBe` FixedName (Unsure ["Alfonso", "Julián"]) (Unsure ["Rodrigo", "Trucco"])
+    it "AS AN" $ run (NameAndSurname ["Rodrigo", "Trucco"] ["Alfonso", "Julián"]) `shouldBe` FixedName (Unsure ["Alfonso", "Julián"]) (Unsure ["Rodrigo", "Trucco"])
+
+    it "NA SA" $ run (NameAndSurname ["Leonardo", "Alfonso"] ["Finzi", "Rodrigo"] ) `shouldBe` FixedName (Unsure ["Leonardo", "Alfonso"]) (Unsure ["Finzi", "Rodrigo"])
+    it "SA NA" $ run (NameAndSurname ["Finzi", "Rodrigo"] ["Leonardo", "Alfonso"]) `shouldBe` FixedName (Unsure ["Leonardo", "Alfonso"]) (Unsure ["Finzi", "Rodrigo"])
+
+    it "A SS" $ run (NameAndSurname ["Alfonso"] ["Villani", "Trucco"] ) `shouldBe` FixedName (Unsure ["Alfonso"]) (Sure ["Villani", "Trucco"])
+    it "SS A" $ run (NameAndSurname ["Villani", "Trucco"] ["Alfonso"]) `shouldBe` FixedName (Unsure ["Alfonso"]) (Sure ["Villani", "Trucco"])
+
+    it "NN AS" $ run (NameAndSurname ["Nadia", "Rocío"] ["Rodrigo", "Trucco"] ) `shouldBe` FixedName (Sure ["Nadia", "Rocío"]) (Unsure ["Rodrigo", "Trucco"])
+    it "AS NN" $ run (NameAndSurname ["Rodrigo", "Trucco"] ["Nadia", "Rocío"]) `shouldBe` FixedName (Sure ["Nadia", "Rocío"]) (Unsure ["Rodrigo", "Trucco"])
+
