@@ -2,138 +2,131 @@
 
 module Data.Name (
   fix,
-  fixes,
-  confidence,
-  Bag (..),
-  Name (..),
-  Uncertain (..),
-  FixedName (..)) where
+  fixMaybe,
+  analyze,
+  makeRegistry,
+  Class(..),
+  Name(..),
+  Registry (..),
+  PersonalName (..)) where
 
 import Data.Function (on)
-import Data.List (splitAt, maximumBy)
+import Data.List (splitAt, find, intersect, (\\), maximumBy)
+import Data.Maybe (fromMaybe)
 
-data Bag = Bag { names :: [String], surnames :: [String] } deriving Show
+data Registry = Registry { givens :: [String], families :: [String], ambiguous :: [String] } deriving (Eq, Show)
 
-data Uncertain a
-  = Sure a
-  | Unsure a
-  | Impossible
-  deriving (Show, Eq)
-
-data Name
-  = FullName [String]
-  | NameAndSurname [String] [String]
+data PersonalName
+  = GivenAndFamily [String] [String]
+  | FullName [String]
   deriving (Eq, Show)
 
-data FixedName = FixedName (Uncertain [String]) (Uncertain [String]) deriving (Eq, Show)
+data Class = Given | Family | Other | Bad deriving (Eq, Show)
 
-data Class = N | S | A | UN | US | I deriving Eq
+data Name = Name { ns :: [String], cls :: Class } deriving (Eq, Show)
 
-classify :: Bag -> String -> Class
-classify bag n
-  | inNames' n bag && not (inSurnames' n bag) = N
-  | inSurnames' n bag && not (inNames' n bag) = S
-  | otherwise                         = A
+-- Classes functions
 
-classifyMany :: Bag -> [String] -> Class
-classifyMany bag =  foldClass . map (classify bag)
+isGivenish, isFamilish :: Class -> Bool
 
+isGivenish Given = True
+isGivenish Other = True
+isGivenish _     = False
 
-foldClass :: [Class] -> Class
-foldClass xs@(c:cs)   = foo c (foldMiddleClass c cs) (lasthy xs)
+isFamilish Family = True
+isFamilish Other = True
+isFamilish _     = False
 
-foo h m l | m /= I && h /= l = un h
-foo h m l = m
+merge :: [Class] -> Class
+merge [x]    = x
+merge (Given:xs)  | all isGivenish xs = Given
+merge (Family:xs) | all isFamilish xs = Family
+merge (Other:xs)  = merge xs
+merge _           = Bad
 
-un N = UN
-un S = US
-un A = A
+confidence :: (Class, Class) -> Int
+confidence (Given, Family)  = 8
+confidence (Family, Given)  = 8
+confidence (Family, Other)  = 7
+confidence (Other, Family)  = 7
+confidence (Given, Other)   = 6
+confidence (Other, Given)   = 6
+confidence (Other, Other)   = 5
+confidence (Family, Family) = 4
+confidence (Given, Given)   = 4
+confidence (Bad, Family)    = 3
+confidence (Family, Bad)    = 3
+confidence (Bad, Given)     = 2
+confidence (Given, Bad)     = 2
+confidence (Bad, Other)     = 1
+confidence (Other, Bad)     = 1
+confidence (Bad, Bad)       = 0
 
-foldMiddleClass c []     = c
-foldMiddleClass A (c:cs) = foldMiddleClass c cs
-foldMiddleClass r [A]    = r
-foldMiddleClass r [c]    | r == c = r
-foldMiddleClass _ [_]    = I
-foldMiddleClass r (c:cs) | foldMiddleClass r cs == r = r
-foldMiddleClass _ _      = I
+-- Names functions
 
-lasthy [x] = x
-lasthy xs  = last xs
+mergeNames :: [Name] -> Name
+mergeNames names = Name (concatMap ns names) (merge . map cls $ names)
 
-confidence :: FixedName -> Int
-confidence (FixedName (Sure _)   (Sure _))   = 2
-confidence (FixedName _          (Sure _))   = 1
-confidence (FixedName (Sure _)   _       )   = 1
-confidence (FixedName (Unsure _) _       )   = 0
-confidence (FixedName _          (Unsure _)) = 0
-confidence (FixedName _          _         ) = -1
+namesConfidence :: (Name, Name) -> Int
+namesConfidence (n1, n2) = confidence (cls n1, cls n2)
 
-fix :: Bag -> Name -> FixedName
-fix bag = maximumBy (compare `on` confidence) . fixes bag
-
-fixes :: Bag -> Name -> [FixedName]
-fixes bag (NameAndSurname tentativeName tentativeSurname) = [fix' bag tentativeName tentativeSurname]
-fixes bag (FullName tenatives)                            = map (uncurry (fix' bag)) . partitions $ tenatives
-
-fix' :: Bag -> [String] -> [String] -> FixedName
-fix' bag tentativeName tentativeSurname = fixClass (classifyMany bag tentativeName) (classifyMany bag tentativeSurname)
+splitNames :: [Name] -> (Name, Name)
+splitNames = maximumBy (compare `on` namesConfidence) . map mergePartition . partitions
   where
-    fixClass N N = FixedName Impossible Impossible
-    fixClass N UN = FixedName Impossible Impossible
-    fixClass N S = FixedName (Sure tentativeName) (Sure tentativeSurname)
-    fixClass N US = FixedName (Sure tentativeName) (Unsure tentativeSurname)
-    fixClass N A = FixedName (Sure tentativeName) (Unsure tentativeSurname)
-    fixClass N I = FixedName (Sure tentativeName) Impossible
-    fixClass UN N = FixedName Impossible Impossible
-    fixClass UN UN = FixedName Impossible Impossible
-    fixClass UN S = FixedName (Unsure tentativeName) (Sure tentativeSurname)
-    fixClass UN US = FixedName (Unsure tentativeName) (Unsure tentativeSurname)
-    fixClass UN A = FixedName (Unsure tentativeName) (Unsure tentativeSurname)
-    fixClass UN I = FixedName (Unsure tentativeName) Impossible
-    fixClass S N = FixedName (Sure tentativeSurname) (Sure tentativeName)
-    fixClass S UN = FixedName (Sure tentativeSurname) (Unsure tentativeName)
-    fixClass S S = FixedName Impossible Impossible
-    fixClass S US = FixedName Impossible Impossible
-    fixClass S A = FixedName (Unsure tentativeSurname) (Sure tentativeName)
-    fixClass S I = FixedName Impossible (Sure tentativeName)
-    fixClass US N = FixedName (Sure tentativeSurname) (Unsure tentativeName)
-    fixClass US UN = FixedName (Unsure tentativeSurname) (Unsure tentativeName)
-    fixClass US S = FixedName Impossible Impossible
-    fixClass US US = FixedName Impossible Impossible
-    fixClass US A = FixedName (Unsure tentativeSurname) (Unsure tentativeName)
-    fixClass US I = FixedName Impossible (Unsure tentativeName)
-    fixClass A N = FixedName (Sure tentativeSurname) (Unsure tentativeName)
-    fixClass A UN = FixedName (Unsure tentativeSurname) (Unsure tentativeName)
-    fixClass A S = FixedName (Unsure tentativeName) (Sure tentativeSurname)
-    fixClass A US = FixedName (Unsure tentativeName) (Unsure tentativeSurname)
-    fixClass A A = FixedName (Unsure tentativeName) (Unsure tentativeSurname)
-    fixClass A I = FixedName (Unsure tentativeName) Impossible
-    fixClass I N = FixedName (Sure tentativeSurname) Impossible
-    fixClass I UN = FixedName (Unsure tentativeSurname) Impossible
-    fixClass I S = FixedName Impossible (Sure tentativeSurname)
-    fixClass I US = FixedName Impossible (Unsure tentativeSurname)
-    fixClass I A = FixedName Impossible (Unsure tentativeSurname)
-    fixClass I I = FixedName Impossible Impossible
+    mergePartition (start, end)     = (mergeNames start, mergeNames end)
 
 partitions :: [a] -> [([a], [a])]
 partitions xs = [splitAt x xs| x <- [1 .. (length xs - 1)]]
 
-inNames    :: [String] -> Bag -> Bool
-inNames    ns bag = all (\n -> inNames' n bag || not (inSurnames' n bag)) (middle ns) && all (`inNames'` bag) (extremes ns)
+-- Registry function
 
-inSurnames :: [String] -> Bag -> Bool
-inSurnames ns bag = all (\n -> inSurnames' n bag || not (inNames' n bag)) (middle ns) && all (`inSurnames'` bag) (extremes ns)
+registeredAsGiven, registeredAsFamily :: String -> Registry -> Bool
+registeredAsGiven n = elem n . givens
+registeredAsFamily n = elem n . families
 
-inNames'    n = elem n . names
-inSurnames' n = elem n . surnames
 
-isName, isSurname, isAmbiguous :: [String] -> Bag -> Bool
-isName      n bag = inNames n bag && not (inSurnames n bag)
-isSurname   n bag = inSurnames n bag && not (inNames n bag)
-isAmbiguous n bag = inSurnames n bag && inNames n bag || not (inSurnames n bag) && not (inNames n bag)
+-- Classification functions
 
-middle (_:x:xs) = tail (x:xs)
-middle _        = []
+classify :: Registry -> String -> Class
+classify registry n
+  | registeredAsGiven n registry   = Given
+  | registeredAsFamily n registry  = Family
+  | otherwise                      = Other
 
-extremes (x:y:xs) = [x, last (y:xs)]
-extremes (x:_)    = [x]
+classifyMany :: Registry -> [String] -> Class
+classifyMany registry = merge . map (classify registry)
+
+toName :: Registry -> [String] -> Name
+toName registry n = Name n (classifyMany registry n)
+
+toSingletonName :: Registry -> String -> Name
+toSingletonName registry n = Name [n] (classify registry n)
+
+makeRegistry :: [String] -> [String] -> Registry
+makeRegistry givens families = Registry (givens \\ ambiguous) (families \\ ambiguous) ambiguous
+  where ambiguous = intersect givens families
+
+-- Fix functions
+
+analyze :: Registry -> PersonalName -> (Name, Name)
+analyze registry (GivenAndFamily given family) = (toName registry given, toName registry family)
+analyze registry (FullName names)              = splitNames . map (toSingletonName registry) $ names
+
+fixMaybe :: Registry -> PersonalName -> Maybe PersonalName
+fixMaybe registry = uncurry makePersonalName . analyze registry
+
+fix :: Registry -> PersonalName -> PersonalName
+fix registry n = fromMaybe n . fixMaybe registry $ n
+
+makePersonalName :: Name -> Name -> Maybe PersonalName
+makePersonalName (Name _ Given)  (Name _ Given)   = Nothing
+makePersonalName (Name _ Given)  (Name _ Bad)     = Nothing
+makePersonalName (Name g Given)  (Name f _)       = Just $ GivenAndFamily g f
+makePersonalName (Name g Family) (Name f Family)  = Nothing
+makePersonalName (Name g Family) (Name f Bad)     = Nothing
+makePersonalName (Name g Family) (Name f _)       = Just $ GivenAndFamily f g
+makePersonalName (Name g Other)  (Name f Given)   = Just $ GivenAndFamily f g
+makePersonalName (Name g Other)  (Name f Family)  = Just $ GivenAndFamily g f
+makePersonalName (Name g Other)  (Name f Other)   = Just $ GivenAndFamily g f
+makePersonalName _               _                = Nothing
+
