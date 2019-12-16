@@ -7,7 +7,7 @@ import System.IO.Unsafe
 sampleRegistry = unsafePerformIO $ do
   names <- fmap lines (readFile "test/data/givens.txt")
   surnames <- fmap lines (readFile "test/data/families.txt")
-  return $ makeRegistry names surnames (defaultOptions { treatUnknownAsFamily = True })
+  return $ makeRegistry names surnames (defaultOptions { transliterateNames = True, treatUnknownAsFamily = True })
 
 run = fix sampleRegistry
 runMaybe = fixMaybe sampleRegistry
@@ -17,6 +17,7 @@ spec = do
   describe "fix" $ do
     describe "GivenAndFamily" $ do
 
+      it "ś ń" $ run (GivenAndFamily ["cannavo"] ["monica"]) `shouldBe` (GivenAndFamily ["monica"] ["cannavo"])
       it "N S" $ run (GivenAndFamily ["Rocío"] ["Gonzalez"]) `shouldBe` (GivenAndFamily ["Rocío"] ["Gonzalez"])
       it "S N" $ run (GivenAndFamily ["Calvo"] ["Felipe"]) `shouldBe` (GivenAndFamily ["Felipe"] ["Calvo"])
 
