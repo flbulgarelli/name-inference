@@ -14,7 +14,12 @@ import Data.Function (on)
 import Data.List (splitAt, find, intersect, (\\), maximumBy)
 import Data.Maybe (fromMaybe)
 
-data Registry = Registry { givens :: [String], families :: [String], ambiguous :: [String] } deriving (Eq, Show)
+data Registry = Registry {
+    givens :: [String],
+    families :: [String],
+    ambiguous :: [String],
+    treatUnknownAsFamily :: Bool
+  } deriving (Eq, Show)
 
 data PersonalName
   = GivenAndFamily [String] [String]
@@ -83,15 +88,17 @@ partitions xs = [splitAt x xs| x <- [1 .. (length xs - 1)]]
 registeredAsGiven, registeredAsFamily :: String -> Registry -> Bool
 registeredAsGiven n = elem n . givens
 registeredAsFamily n = elem n . families
-
+registeredAsAmbiguous n = elem n . ambiguous
 
 -- Classification functions
 
 classify :: Registry -> String -> Class
 classify registry n
-  | registeredAsGiven n registry   = Given
-  | registeredAsFamily n registry  = Family
-  | otherwise                      = Other
+  | registeredAsGiven n registry     = Given
+  | registeredAsFamily n registry    = Family
+  | registeredAsAmbiguous n registry = Other
+  | treatUnknownAsFamily registry    = Family
+  | otherwise                        = Other
 
 classifyMany :: Registry -> [String] -> Class
 classifyMany registry = merge . map (classify registry)
@@ -103,7 +110,7 @@ toSingletonName :: Registry -> String -> Name
 toSingletonName registry n = Name [n] (classify registry n)
 
 makeRegistry :: [String] -> [String] -> Registry
-makeRegistry givens families = Registry (givens \\ ambiguous) (families \\ ambiguous) ambiguous
+makeRegistry givens families = Registry (givens \\ ambiguous) (families \\ ambiguous) ambiguous False
   where ambiguous = intersect givens families
 
 -- Fix functions
