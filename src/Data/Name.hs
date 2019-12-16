@@ -16,15 +16,15 @@ import Data.Function (on)
 import Data.List (splitAt, find, maximumBy)
 import Data.Maybe (fromMaybe)
 import Data.Set (Set, fromList, intersection, difference)
-import Data.Text (pack, unpack, toLower)
+import Data.Text (Text, pack, unpack, toLower)
 import Text.Inflections (transliterate)
 
 import qualified Data.Char as C
 
 data Registry = Registry {
-    givens :: Set String,
-    families :: Set String,
-    ambiguous :: Set String,
+    givens :: Set Text,
+    families :: Set Text,
+    ambiguous :: Set Text,
     options :: RegistryOptions
   } deriving (Eq, Show)
 
@@ -100,7 +100,7 @@ partitions xs = [splitAt x xs| x <- [1 .. (length xs - 1)]]
 defaultOptions :: RegistryOptions
 defaultOptions = RegistryOptions False False
 
-registeredAsGiven, registeredAsFamily :: String -> Registry -> Bool
+registeredAsGiven, registeredAsFamily, registeredAsAmbiguous :: Text -> Registry -> Bool
 registeredAsGiven n = elem n . givens
 registeredAsFamily n = elem n . families
 registeredAsAmbiguous n = elem n . ambiguous
@@ -132,11 +132,11 @@ makeRegistry gs fs options = Registry (difference givens ambiguous) (difference 
     families = encodeMany options fs
     ambiguous = intersection givens families
 
-encode :: RegistryOptions -> String -> String
-encode registry n | transliterateNames registry = unpack . transliterate . toLower . pack $ n
-encode _        n = map C.toLower n
+encode :: RegistryOptions -> String -> Text
+encode registry n | transliterateNames registry = transliterate . toLower . pack $ n
+encode _        n = toLower . pack $ n
 
-encodeMany :: RegistryOptions -> [String] -> Set String
+encodeMany :: RegistryOptions -> [String] -> Set Text
 encodeMany options = fromList . map (encode options)
 
 -- Fix functions
