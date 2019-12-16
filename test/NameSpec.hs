@@ -3,7 +3,7 @@ module NameSpec (spec) where
 import  Test.Hspec
 import  Data.Name
 
-sampleRegistry = makeRegistry names surnames
+sampleRegistry = makeRegistry names surnames defaultOptions
   where
     names = [
       "Franco",
@@ -97,6 +97,9 @@ spec = do
 
       it "NN AS" $ run (GivenAndFamily ["Nadia", "Rocío"] ["Rodrigo", "Trucco"]) `shouldBe` GivenAndFamily ["Nadia", "Rocío"] ["Rodrigo", "Trucco"]
       it "AS NN" $ run (GivenAndFamily ["Rodrigo", "Trucco"] ["Nadia", "Rocío"]) `shouldBe` GivenAndFamily ["Nadia", "Rocío"] ["Rodrigo", "Trucco"]
+
+      it "nn s" $ run (GivenAndFamily ["carolina", "veronica"] ["gruszczanski"]) `shouldBe` GivenAndFamily ["carolina", "veronica"] ["gruszczanski"]
+      it "s nn" $ run (GivenAndFamily ["gruszczanski"] ["carolina", "veronica"]) `shouldBe` GivenAndFamily ["carolina", "veronica"] ["gruszczanski"]
 
     describe "FullName" $ do
 

@@ -7,7 +7,7 @@ import System.IO.Unsafe
 sampleRegistry = unsafePerformIO $ do
   names <- fmap lines (readFile "test/data/givens.txt")
   surnames <- fmap lines (readFile "test/data/families.txt")
-  return $ (makeRegistry names surnames) { treatUnknownAsFamily = True }
+  return $ makeRegistry names surnames (defaultOptions { treatUnknownAsFamily = True })
 
 run = fix sampleRegistry
 runMaybe = fixMaybe sampleRegistry

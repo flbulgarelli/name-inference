@@ -5,19 +5,31 @@ module Data.Name (
   fixMaybe,
   analyze,
   makeRegistry,
+  defaultOptions,
   Class(..),
   Name(..),
   Registry (..),
+  RegistryOptions (..),
   PersonalName (..)) where
 
 import Data.Function (on)
-import Data.List (splitAt, find, intersect, (\\), maximumBy)
+import Data.List (splitAt, find, maximumBy)
 import Data.Maybe (fromMaybe)
+import Data.Set (Set, fromList, intersection, difference)
+import Data.Text (pack, unpack, toLower)
+import Text.Inflections (transliterate)
+
+import qualified Data.Char as C
 
 data Registry = Registry {
-    givens :: [String],
-    families :: [String],
-    ambiguous :: [String],
+    givens :: Set String,
+    families :: Set String,
+    ambiguous :: Set String,
+    options :: RegistryOptions
+  } deriving (Eq, Show)
+
+data RegistryOptions = RegistryOptions {
+    transliterateNames :: Bool,
     treatUnknownAsFamily :: Bool
   } deriving (Eq, Show)
 
@@ -83,7 +95,10 @@ splitNames = maximumBy (compare `on` namesConfidence) . map mergePartition . par
 partitions :: [a] -> [([a], [a])]
 partitions xs = [splitAt x xs| x <- [1 .. (length xs - 1)]]
 
--- Registry function
+-- Registry functions
+
+defaultOptions :: RegistryOptions
+defaultOptions = RegistryOptions False False
 
 registeredAsGiven, registeredAsFamily :: String -> Registry -> Bool
 registeredAsGiven n = elem n . givens
@@ -94,11 +109,12 @@ registeredAsAmbiguous n = elem n . ambiguous
 
 classify :: Registry -> String -> Class
 classify registry n
-  | registeredAsGiven n registry     = Given
-  | registeredAsFamily n registry    = Family
-  | registeredAsAmbiguous n registry = Other
-  | treatUnknownAsFamily registry    = Family
-  | otherwise                        = Other
+  | registeredAsGiven n' registry                 = Given
+  | registeredAsFamily n' registry                = Family
+  | registeredAsAmbiguous n' registry             = Other
+  | treatUnknownAsFamily . options $ registry     = Family
+  | otherwise                                     = Other
+    where n' = encode (options registry) n
 
 classifyMany :: Registry -> [String] -> Class
 classifyMany registry = merge . map (classify registry)
@@ -109,9 +125,19 @@ toName registry n = Name n (classifyMany registry n)
 toSingletonName :: Registry -> String -> Name
 toSingletonName registry n = Name [n] (classify registry n)
 
-makeRegistry :: [String] -> [String] -> Registry
-makeRegistry givens families = Registry (givens \\ ambiguous) (families \\ ambiguous) ambiguous False
-  where ambiguous = intersect givens families
+makeRegistry :: [String] -> [String] -> RegistryOptions -> Registry
+makeRegistry gs fs options = Registry (difference givens ambiguous) (difference families ambiguous) ambiguous options
+  where
+    givens = encodeMany options gs
+    families = encodeMany options fs
+    ambiguous = intersection givens families
+
+encode :: RegistryOptions -> String -> String
+encode registry n | transliterateNames registry = unpack . transliterate . toLower . pack $ n
+encode _        n = map C.toLower n
+
+encodeMany :: RegistryOptions -> [String] -> Set String
+encodeMany options = fromList . map (encode options)
 
 -- Fix functions
 
