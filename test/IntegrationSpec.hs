@@ -29,10 +29,12 @@ spec = do
 
       it "S S" $ runMaybe (GivenAndFamily ["Bulgarelli"] ["Alt"]) `shouldBe` Nothing
 
-      it "N N" $ runMaybe (GivenAndFamily ["Laura"] ["Giselle"]) `shouldBe` Nothing
+      it "N N" $ runMaybe (GivenAndFamily ["Ivana"] ["Giselle"]) `shouldBe` Nothing
+
+      it "A N" $ run (GivenAndFamily ["Laura"] ["Giselle"]) `shouldBe` (GivenAndFamily ["Giselle"] ["Laura"])
+      it "N A" $ run (GivenAndFamily ["Giselle"] ["Laura"]) `shouldBe` (GivenAndFamily ["Giselle"] ["Laura"])
 
       it "SS A" $ run (GivenAndFamily ["Villani", "Trucco"] ["Alfonso"]) `shouldBe` GivenAndFamily ["Alfonso"] ["Villani", "Trucco"]
-
 
     describe "FullName" $ do
 
@@ -40,14 +42,17 @@ spec = do
       it "SN" $ run (FullName ["Calvo", "Felipe"]) `shouldBe` (GivenAndFamily ["Felipe"] ["Calvo"])
 
       it "NNS" $ run (FullName ["Federico", "Alfredo", "Scarpa"]) `shouldBe` (GivenAndFamily ["Federico", "Alfredo"] ["Scarpa"])
-      it "SNN" $ run (FullName ["Scarpa", "Federico", "Alfredo"]) `shouldBe` (GivenAndFamily ["Federico", "Alfredo"] ["Scarpa"])
+      it "SNN" $ run (FullName ["Scarpa", "Federico", "Alfredo"]) `shouldBe` (GivenAndFamily ["Alfredo"] ["Scarpa", "Federico"])
 
       it "NSS" $ run (FullName ["Ivana", "Feldfeber", "Kivelsky"]) `shouldBe` (GivenAndFamily ["Ivana"] ["Feldfeber", "Kivelsky"])
       it "SSN" $ run (FullName ["Feldfeber", "Kivelsky", "Ivana"]) `shouldBe` (GivenAndFamily ["Ivana"] ["Feldfeber", "Kivelsky"])
 
       it "SS" $ runMaybe (FullName ["Bulgarelli", "Alt"]) `shouldBe` Nothing
 
-      it "NN" $ runMaybe (FullName ["Laura", "Giselle"]) `shouldBe` Nothing
+      it "NN" $ runMaybe (FullName ["Ivana", "Giselle"]) `shouldBe` Nothing
+
+      it "AN" $ run (FullName ["Laura", "Giselle"]) `shouldBe` (GivenAndFamily ["Giselle"] ["Laura"])
+      it "NA" $ run (FullName ["Giselle", "Laura"]) `shouldBe` (GivenAndFamily ["Giselle"] ["Laura"])
 
       it "SSA" $ run (FullName ["Villani", "Trucco", "Alfonso"]) `shouldBe` GivenAndFamily ["Alfonso"] ["Villani", "Trucco"]
 
