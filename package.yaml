@@ -23,19 +23,29 @@ dependencies:
 - base >= 4.7 && < 5
 - containers
 - text
+- split
 - inflections
 
 library:
   source-dirs: src
 
+executables:
+  name-inference:
+    main: Main.hs
+    source-dirs:         bin
+    dependencies:
+    - name-inference
+    - optparse-applicative
+    ghc-options: &ghc-options
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+
 tests:
   name-inference-test:
     main:                Spec.hs
     source-dirs:         test
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
+    <<: *ghc-options
     dependencies:
     - name-inference
     - hspec
