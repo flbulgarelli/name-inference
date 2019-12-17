@@ -104,7 +104,6 @@ spec = do
       it "Ń Ś" $ run (GivenAndFamily ["Monica"] ["Cannavo"]) `shouldBe` (GivenAndFamily ["Monica"] ["Cannavo"])
       it "Ś Ń" $ run (GivenAndFamily ["Cannavo"] ["Monica"]) `shouldBe` (GivenAndFamily ["Monica"] ["Cannavo"])
 
-
     describe "FullName" $ do
 
       it "NS" $ run (FullName ["Rocío", "Gonzalez"]) `shouldBe` (GivenAndFamily ["Rocío"] ["Gonzalez"])
@@ -140,3 +139,4 @@ spec = do
       it "NNAS" $ run (FullName ["Nadia", "Rocío", "Rodrigo", "Trucco"]) `shouldBe` GivenAndFamily ["Nadia", "Rocío", "Rodrigo"] ["Trucco"]
       it "ASNN" $ run (FullName ["Rodrigo", "Trucco", "Nadia", "Rocío"]) `shouldBe` GivenAndFamily ["Nadia", "Rocío"] ["Rodrigo", "Trucco"]
 
+      it "N" $ run (FullName ["Nadia"]) `shouldBe` (FullName ["Nadia"])

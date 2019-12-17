@@ -30,7 +30,11 @@ analyze registry (GivenAndFamily given family) = (makeName registry given, makeN
 analyze registry (FullName names)              = splitNames . map (makeSingletonName registry) $ names
 
 fixMaybe :: Registry -> PersonalName -> Maybe PersonalName
-fixMaybe registry = uncurry makePersonalName . analyze registry
+fixMaybe _        (FullName [])         = Nothing
+fixMaybe _        (FullName [_])        = Nothing
+fixMaybe _        (GivenAndFamily [] _) = Nothing
+fixMaybe _        (GivenAndFamily _ []) = Nothing
+fixMaybe registry name          = uncurry makePersonalName . analyze registry $ name
 
 fix :: Registry -> PersonalName -> PersonalName
 fix registry n = fromMaybe n . fixMaybe registry $ n
