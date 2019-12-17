@@ -1,7 +1,7 @@
 module IntegrationSpec (spec) where
 
 import  Test.Hspec
-import  Data.Name
+import  Data.PersonalName
 import System.IO.Unsafe
 
 sampleRegistry = unsafePerformIO $ do
