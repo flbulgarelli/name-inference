@@ -32,6 +32,14 @@ GivenAndFamily:Franco,Bulgarelli
 $ echo "Franco Bulgarelli Manfroni" | onomastic --givens test/data/givens.txt  --families test/data/families.txt  -ut
 GivenAndFamily:Franco,Bulgarelli Manfroni
 
+# some ambiguous splits will be prevented by default
+$ echo "Bulgarelli Manfroni Franco Leonardo" | onomastic --givens test/data/givens.txt  --families test/data/families.txt  -ut
+FullName:Bulgarelli Manfroni Franco Leonardo
+
+# however you can force them using the -b flag
+$ echo "Bulgarelli Manfroni Franco Leonardo" | onomastic --givens test/data/givens.txt  --families test/data/families.txt  -utb
+GivenAndFamily:Leonardo,Bulgarelli Manfroni Franco
+
 $ echo "Feldfeber Kivelski Ivana" | onomastic --givens test/data/givens.txt  --families test/data/families.txt  -ut
 GivenAndFamily:Ivana,Feldfeber Kivelski
 
