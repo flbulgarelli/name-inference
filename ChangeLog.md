@@ -1,3 +1,3 @@
-# Changelog for name-inference
+# Changelog for onomastic
 
 ## Unreleased changes

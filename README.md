@@ -1,8 +1,10 @@
-# name-inference
+# onomastic
+
+Make inferences about personal names
 
 ```
-name-inference -h
-Usage: name-inference (-g|--givens FILE) (-f|--families FILE) [-F|--file FILE]
+onomastic -h
+Usage: onomastic (-g|--givens FILE) (-f|--families FILE) [-F|--file FILE]
                       [-X|--output-format tagged|csv|padded]
                       [-t|--transliterate] [-u|--unknown-as-family]
   Classify and flip personal names
@@ -23,22 +25,22 @@ Available options:
 
 
 ```bash
-$ echo "Franco Bulgarelli" | name-inference --givens test/data/givens.txt  --families test/data/families.txt  -ut
+$ echo "Franco Bulgarelli" | onomastic --givens test/data/givens.txt  --families test/data/families.txt  -ut
 GivenAndFamily:Franco,Bulgarelli
 
-$ echo "Franco Bulgarelli Manfroni" | name-inference --givens test/data/givens.txt  --families test/data/families.txt  -ut
+$ echo "Franco Bulgarelli Manfroni" | onomastic --givens test/data/givens.txt  --families test/data/families.txt  -ut
 GivenAndFamily:Franco,Bulgarelli Manfroni
 
-$ echo "Feldfeber Kivelski Ivana" | name-inference --givens test/data/givens.txt  --families test/data/families.txt  -ut
+$ echo "Feldfeber Kivelski Ivana" | onomastic --givens test/data/givens.txt  --families test/data/families.txt  -ut
 GivenAndFamily:Ivana,Feldfeber Kivelski
 
-$ echo "Julian Berbel Alt" | name-inference --givens test/data/givens.txt  --families test/data/families.txt  -ut
+$ echo "Julian Berbel Alt" | onomastic --givens test/data/givens.txt  --families test/data/families.txt  -ut
 GivenAndFamily:Julian,Berbel Alt
 
-$ echo "BERBEL ALT julian" | name-inference --givens test/data/givens.txt  --families test/data/families.txt  -ut
+$ echo "BERBEL ALT julian" | onomastic --givens test/data/givens.txt  --families test/data/families.txt  -ut
 GivenAndFamily:Julian,Berbel Alt
 
-$ echo "Finzi Nadia Giselle" | name-inference --givens test/data/givens.txt  --families test/data/families.txt  -ut
+$ echo "Finzi Nadia Giselle" | onomastic --givens test/data/givens.txt  --families test/data/families.txt  -ut
 GivenAndFamily:Nadia Giselle,Finzi
 ```
 
