@@ -5,8 +5,8 @@ Make inferences about personal names
 ```
 onomastic -h
 Usage: onomastic (-g|--givens FILE) (-f|--families FILE) [-F|--file FILE]
-                      [-X|--output-format tagged|csv|padded]
-                      [-t|--transliterate] [-u|--unknown-as-family]
+                 [-X|--output-format tagged|csv|padded] [-t|--transliterate]
+                 [-u|--unknown-as-family] [-b|--break-full-names]
   Classify and flip personal names
 
 Available options:
@@ -17,6 +17,7 @@ Available options:
                            output format. `tagged` by default
   -t,--transliterate       transliterate names
   -u,--unknown-as-family   Treat unknown names as family names
+  -b,--break-full-names    Force split of ambiguous full names
   -h,--help                Show this help text
 ```
 

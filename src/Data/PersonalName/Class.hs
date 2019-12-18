@@ -1,4 +1,5 @@
 module Data.PersonalName.Class (
+  ambiguousCenter,
   confidence,
   isFamilish,
   isGivenish,
@@ -42,3 +43,22 @@ confidence (Given, Bad)     = 2
 confidence (Bad, Other)     = 1
 confidence (Other, Bad)     = 1
 confidence (Bad, Bad)       = 0
+
+
+ambiguousCenter :: [Class] -> Bool
+ambiguousCenter (Other:xs)  = ambiguousCenter xs
+ambiguousCenter (Given:xs)  = ambiguousGivenCenter [] xs
+ambiguousCenter (Family:xs) = ambiguousFamilyCenter [] xs
+ambiguousCenter _           = False
+
+ambiguousGivenCenter :: [Class] -> [Class] -> Bool
+ambiguousGivenCenter os (Given:xs)  = ambiguousGivenCenter [] xs
+ambiguousGivenCenter os (Family:xs) = not . null $ os
+ambiguousGivenCenter os (Other:xs)  = ambiguousGivenCenter (Other:os) xs
+ambiguousGivenCenter os _           = False
+
+ambiguousFamilyCenter :: [Class] -> [Class] -> Bool
+ambiguousFamilyCenter os (Family:xs) = ambiguousFamilyCenter [] xs
+ambiguousFamilyCenter os (Given:xs)  = not . null $ os
+ambiguousFamilyCenter os (Other:xs)  = ambiguousFamilyCenter (Other:os) xs
+ambiguousFamilyCenter os _           = False

@@ -1,13 +1,16 @@
 {-# LANGUAGE FlexibleInstances #-}
 
 module Data.PersonalName (
+  analyze,
+  defaultOptions,
   fix,
   fixMaybe,
-  analyze,
+  justBreakNames,
   makeRegistry,
-  defaultOptions,
+  splitNames,
   Class(..),
   Name(..),
+  NameDivider,
   Registry (..),
   RegistryOptions (..),
   PersonalName (..)) where
@@ -20,24 +23,25 @@ import Data.PersonalName.Name
 
 import qualified Data.Char as C
 
+
 data PersonalName
   = GivenAndFamily [String] [String]
   | FullName [String]
   deriving (Eq, Show)
 
-analyze :: Registry -> PersonalName -> (Name, Name)
-analyze registry (GivenAndFamily given family) = (makeName registry given, makeName registry family)
-analyze registry (FullName names)              = splitNames . map (makeSingletonName registry) $ names
+analyze :: Registry -> NameDivider -> PersonalName -> Maybe (Name, Name)
+analyze registry _       (GivenAndFamily given family) = Just (makeName registry given, makeName registry family)
+analyze registry divider (FullName names)              = divider . map (makeSingletonName registry) $ names
 
-fixMaybe :: Registry -> PersonalName -> Maybe PersonalName
-fixMaybe _        (FullName [])         = Nothing
-fixMaybe _        (FullName [_])        = Nothing
-fixMaybe _        (GivenAndFamily [] _) = Nothing
-fixMaybe _        (GivenAndFamily _ []) = Nothing
-fixMaybe registry name          = uncurry makePersonalName . analyze registry $ name
+fixMaybe :: Registry -> NameDivider -> PersonalName -> Maybe PersonalName
+fixMaybe _        _        (FullName [])         = Nothing
+fixMaybe _        _        (FullName [_])        = Nothing
+fixMaybe _        _        (GivenAndFamily [] _) = Nothing
+fixMaybe _        _        (GivenAndFamily _ []) = Nothing
+fixMaybe registry divider  name                  = analyze registry divider name >>= uncurry makePersonalName
 
-fix :: Registry -> PersonalName -> PersonalName
-fix registry n = fromMaybe n . fixMaybe registry $ n
+fix :: Registry -> NameDivider -> PersonalName -> PersonalName
+fix registry divider n = fromMaybe n . fixMaybe registry divider $ n
 
 makePersonalName :: Name -> Name -> Maybe PersonalName
 makePersonalName (Name _ Given)  (Name _ Given)   = Nothing

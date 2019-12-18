@@ -9,8 +9,8 @@ sampleRegistry = unsafePerformIO $ do
   surnames <- fmap lines (readFile "test/data/families.txt")
   return $ makeRegistry names surnames (defaultOptions { transliterateNames = True, treatUnknownAsFamily = True })
 
-run = fix sampleRegistry
-runMaybe = fixMaybe sampleRegistry
+run = fix sampleRegistry justBreakNames
+runMaybe = fixMaybe sampleRegistry splitNames
 
 spec :: Spec
 spec = do

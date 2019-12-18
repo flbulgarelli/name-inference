@@ -15,7 +15,8 @@ data Input = Input {
     inputFile :: String,
     outputFormat :: String,
     transliterate :: Bool,
-    unknownAsFamily :: Bool
+    unknownAsFamily :: Bool,
+    breakFullNames :: Bool
   }
 
 sample :: Parser Input
@@ -50,6 +51,10 @@ sample = Input
         long "unknown-as-family"
          <> short 'u'
          <> help "Treat unknown names as family names")
+      <*> switch (
+        long "break-full-names"
+         <> short 'b'
+         <> help "Force split of ambiguous full names")
 
 main :: IO ()
 main = execParser opts >>= run
@@ -57,15 +62,19 @@ main = execParser opts >>= run
     opts = info (sample <**> helper) (fullDesc <> progDesc "Classify and flip personal names")
 
 run :: Input -> IO ()
-run (Input givens families file outputFormat transliterate unknownAsFamily) = do
+run (Input givens families file outputFormat transliterate unknownAsFamily breakFullNames) = do
   givens <- fmap lines (readFile givens)
   families <- fmap lines (readFile families)
   let registry = makeRegistry givens families (RegistryOptions transliterate unknownAsFamily)
   contents <- if file == "--" then getContents else readFile file
-  for_ (lines contents) (processLine registry $ selectFormat outputFormat)
+  for_ (lines contents) (processLine registry (selectFormat outputFormat) (selectDivider breakFullNames))
 
-processLine :: Registry -> Format -> String -> IO ()
-processLine registry format = putStrLn  . format . fix registry . FullName . map unpack . prepare . pack
+selectDivider :: Bool -> NameDivider
+selectDivider False = splitNames
+selectDivider _     = justBreakNames
+
+processLine :: Registry -> Format ->  NameDivider -> String -> IO ()
+processLine registry format divider = putStrLn  . format . fix registry divider . FullName . map unpack . prepare . pack
 
 type Format = PersonalName -> String
 
