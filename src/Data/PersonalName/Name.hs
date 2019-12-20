@@ -49,3 +49,24 @@ makeSingletonName registry n = Name [n] (classify registry n)
 
 partitions :: [a] -> [([a], [a])]
 partitions xs = [splitAt x xs| x <- [1 .. (length xs - 1)]]
+
+
+
+type Bonus = [String] -> [String] -> Int
+
+adjustConfidence :: Int -> Bonus -> (Name, Name) ->  Int
+adjustConfidence n bonus (Name ns1 cls1, Name ns2 cls2) | isGivenish cls1 && isFamilish cls2 =  9 * n + bonus ns1 ns2
+adjustConfidence n _     _                              = 9 * n
+
+bonusGivenish :: Bonus
+bonusGivenish gs fs | length gs > length fs = 5
+bonusGivenish gs fs | length gs < length fs = -5
+bonusGivenish _  _  = 0
+
+bonusFamilish :: Bonus
+bonusFamilish gs fs | length gs < length fs = 5
+bonusFamilish gs fs | length gs > length fs = -5
+bonusFamilish _  _  = 0
+
+noBonus :: Bonus
+noBonus _ _ = 0
