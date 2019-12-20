@@ -39,7 +39,7 @@ sample = Input
          <> help "families filename" )
       <*> strOption (
         long "output-format"
-         <> short 'X'
+         <> short 'o'
          <> metavar "tagged|csv|padded"
          <> value "tagged"
          <> help "output format. `tagged` by default" )
