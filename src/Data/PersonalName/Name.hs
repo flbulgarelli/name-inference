@@ -6,12 +6,13 @@ module Data.PersonalName.Name (
   mergeNames,
   namesConfidence,
   splitNames,
+  swapNames,
   Name (..),
   NameDivider) where
 
 import Data.Function (on)
 import Data.List (splitAt, find, maximumBy)
-import Data.PersonalName.Class (ambiguousCenter, confidence, merge, Class)
+import Data.PersonalName.Class (ambiguousCenter, confidence, merge, isFamilish, isGivenish, Class(..))
 
 import Data.PersonalName.Registry (classify, classifyMany, Registry)
 
@@ -23,7 +24,7 @@ mergeNames :: [Name] -> Name
 mergeNames names = Name (concatMap ns names) (merge . map cls $ names)
 
 namesConfidence :: (Name, Name) -> Int
-namesConfidence (n1, n2) = confidence (cls n1, cls n2)
+namesConfidence names@(n1, n2) = adjustConfidence (confidence (cls n1, cls n2)) noBonus names
 
 splitNames :: NameDivider
 splitNames names | ambiguousNamesCenter names = Nothing
@@ -36,7 +37,7 @@ ambiguousNamesCenter :: [Name] -> Bool
 ambiguousNamesCenter = ambiguousCenter . map cls
 
 breakNames :: [Name] -> (Name, Name)
-breakNames = maximumBy (compare `on` namesConfidence) . map mergePartition . partitions
+breakNames = maximumBy (compare `on` namesConfidence) . map (swapNames . mergePartition) . partitions
   where
     mergePartition (start, end)     = (mergeNames start, mergeNames end)
 
@@ -70,3 +71,8 @@ bonusFamilish _  _  = 0
 
 noBonus :: Bonus
 noBonus _ _ = 0
+
+swapNames :: (Name, Name) -> (Name, Name)
+swapNames (f@(Name _ Family), g@(Name _ cls  )) | isGivenish cls = (g, f)
+swapNames (f@(Name _ cls   ), g@(Name _ Given)) | isFamilish cls = (g, f)
+swapNames names                                 = names

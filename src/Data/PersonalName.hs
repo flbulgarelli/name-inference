@@ -30,7 +30,7 @@ data PersonalName
   deriving (Eq, Show)
 
 analyze :: Registry -> NameDivider -> PersonalName -> Maybe (Name, Name)
-analyze registry _       (GivenAndFamily given family) = Just (makeName registry given, makeName registry family)
+analyze registry _       (GivenAndFamily given family) = Just . swapNames $ (makeName registry given, makeName registry family)
 analyze registry divider (FullName names)              = divider . map (makeSingletonName registry) $ names
 
 fixMaybe :: Registry -> NameDivider -> PersonalName -> Maybe PersonalName
@@ -45,13 +45,9 @@ fix registry divider n = fromMaybe n . fixMaybe registry divider $ n
 
 makePersonalName :: Name -> Name -> Maybe PersonalName
 makePersonalName (Name _ Given)  (Name _ Given)   = Nothing
-makePersonalName (Name _ Given)  (Name _ Bad)     = Nothing
-makePersonalName (Name g Given)  (Name f _)       = Just $ GivenAndFamily g f
-makePersonalName (Name g Family) (Name f Family)  = Nothing
-makePersonalName (Name g Family) (Name f Bad)     = Nothing
-makePersonalName (Name g Family) (Name f _)       = Just $ GivenAndFamily f g
-makePersonalName (Name g Other)  (Name f Given)   = Just $ GivenAndFamily f g
-makePersonalName (Name g Other)  (Name f Family)  = Just $ GivenAndFamily g f
-makePersonalName (Name g Other)  (Name f Other)   = Just $ GivenAndFamily g f
-makePersonalName _               _                = Nothing
+makePersonalName (Name _ Family) (Name _ Family)  = Nothing
+-- makePersonalName (Name _ Other)  (Name _ Other)  = Nothing
+makePersonalName _               (Name _ Bad)     = Nothing
+makePersonalName (Name _ Bad)    _                = Nothing
+makePersonalName (Name g _)     (Name f _)       = Just $ GivenAndFamily g f
 
