@@ -13,6 +13,7 @@ module Data.PersonalName (
   noBonus,
   splitNames,
   splitNamesWith,
+  ConfidenceBonus,
   Class(..),
   Name(..),
   NameDivider,

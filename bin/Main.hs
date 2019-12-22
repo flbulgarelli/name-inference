@@ -14,6 +14,7 @@ data Input = Input {
     familiesFile :: String,
     inputFile :: String,
     outputFormat :: String,
+    confidenceBonus :: String,
     transliterate :: Bool,
     unknownAsFamily :: Bool,
     breakFullNames :: Bool
@@ -43,6 +44,12 @@ sample = Input
          <> metavar "tagged|csv|padded"
          <> value "tagged"
          <> help "output format. `tagged` by default" )
+      <*> strOption (
+        long "bonus"
+          <> short 'B'
+          <> metavar "no|given|family"
+          <> value "no"
+          <> help "Try to maximize length of a name group `no` by default" )
       <*> switch (
         long "transliterate"
          <> short 't'
@@ -62,16 +69,22 @@ main = execParser opts >>= run
     opts = info (sample <**> helper) (fullDesc <> progDesc "Classify and flip personal names")
 
 run :: Input -> IO ()
-run (Input givens families file outputFormat transliterate unknownAsFamily breakFullNames) = do
+run (Input givens families file outputFormat bonus transliterate unknownAsFamily breakFullNames) = do
   givens <- fmap lines (readFile givens)
   families <- fmap lines (readFile families)
   let registry = makeRegistry givens families (RegistryOptions transliterate unknownAsFamily)
   contents <- if file == "--" then getContents else readFile file
-  for_ (lines contents) (processLine registry (selectFormat outputFormat) (selectDivider breakFullNames))
+  for_ (lines contents) (processLine registry (selectFormat outputFormat) (selectDivider breakFullNames bonus))
 
-selectDivider :: Bool -> NameDivider
-selectDivider False = splitNamesWith noBonus
-selectDivider _     = justBreakNamesWith noBonus
+selectDivider :: Bool -> String -> NameDivider
+selectDivider break bonus = divider (selectBonus bonus)
+  where
+    divider = if break then justBreakNamesWith else splitNamesWith
+
+selectBonus :: String -> ConfidenceBonus
+selectBonus "given"  = bonusGivenish
+selectBonus "family" = bonusFamilish
+selectBonus _        = noBonus
 
 processLine :: Registry -> Format ->  NameDivider -> String -> IO ()
 processLine registry format divider = putStrLn  . format . fix registry divider . FullName . map unpack . prepare . pack

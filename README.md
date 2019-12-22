@@ -51,6 +51,12 @@ GivenAndFamily:Julian,Berbel Alt
 
 $ echo "Finzi Nadia Giselle" | onomastic --givens test/data/givens.txt  --families test/data/families.txt  -ut
 GivenAndFamily:Nadia Giselle,Finzi
+
+$ echo "Bulgarelli Manfroni Franco Leonardo" | onomastic --givens test/data/givens.txt  --families test/data/families.txt --bonus family  -utb
+GivenAndFamily:Leonardo,Bulgarelli Manfroni Franco
+
+$ echo "Bulgarelli Manfroni Franco Leonardo" | onomastic --givens test/data/givens.txt  --families test/data/families.txt --bonus given  -utb
+GivenAndFamily:Franco Leonardo,Bulgarelli Manfroni
 ```
 
 
