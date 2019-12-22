@@ -70,8 +70,8 @@ run (Input givens families file outputFormat transliterate unknownAsFamily break
   for_ (lines contents) (processLine registry (selectFormat outputFormat) (selectDivider breakFullNames))
 
 selectDivider :: Bool -> NameDivider
-selectDivider False = splitNames
-selectDivider _     = justBreakNames
+selectDivider False = splitNamesWith noBonus
+selectDivider _     = justBreakNamesWith noBonus
 
 processLine :: Registry -> Format ->  NameDivider -> String -> IO ()
 processLine registry format divider = putStrLn  . format . fix registry divider . FullName . map unpack . prepare . pack

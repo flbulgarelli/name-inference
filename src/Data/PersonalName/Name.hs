@@ -1,14 +1,20 @@
 module Data.PersonalName.Name (
+  bonusFamilish,
+  bonusGivenish,
   breakNames,
   justBreakNames,
+  justBreakNamesWith,
   makeName,
   makeSingletonName,
   mergeNames,
   namesConfidence,
+  noBonus,
   splitNames,
+  splitNamesWith,
   swapNames,
   Name (..),
-  NameDivider) where
+  NameDivider,
+  ConfidenceBonus) where
 
 import Data.Function (on)
 import Data.List (splitAt, find, maximumBy)
@@ -16,28 +22,34 @@ import Data.PersonalName.Class (ambiguousCenter, confidence, merge, isFamilish, 
 
 import Data.PersonalName.Registry (classify, classifyMany, Registry)
 
-
 data Name = Name { ns :: [String], cls :: Class } deriving (Eq, Show)
 type NameDivider = [Name] -> Maybe (Name, Name)
+type ConfidenceBonus = [String] -> [String] -> Int
 
 mergeNames :: [Name] -> Name
 mergeNames names = Name (concatMap ns names) (merge . map cls $ names)
 
-namesConfidence :: (Name, Name) -> Int
-namesConfidence names@(n1, n2) = adjustConfidence (confidence (cls n1, cls n2)) noBonus names
+namesConfidence :: ConfidenceBonus -> (Name, Name) -> Int
+namesConfidence bonus names@(n1, n2) = adjustConfidence (confidence (cls n1, cls n2)) bonus names
+
+splitNamesWith :: ConfidenceBonus -> NameDivider
+splitNamesWith _     names | ambiguousNamesCenter names = Nothing
+splitNamesWith bonus names = Just $ breakNames bonus names
 
 splitNames :: NameDivider
-splitNames names | ambiguousNamesCenter names = Nothing
-splitNames names = Just $ breakNames names
+splitNames = splitNamesWith noBonus
+
+justBreakNamesWith :: ConfidenceBonus -> NameDivider
+justBreakNamesWith bonus = Just . breakNames bonus
 
 justBreakNames :: NameDivider
-justBreakNames = Just . breakNames
+justBreakNames = justBreakNamesWith noBonus
 
 ambiguousNamesCenter :: [Name] -> Bool
 ambiguousNamesCenter = ambiguousCenter . map cls
 
-breakNames :: [Name] -> (Name, Name)
-breakNames = maximumBy (compare `on` namesConfidence) . map (swapNames . mergePartition) . partitions
+breakNames :: ConfidenceBonus -> [Name] -> (Name, Name)
+breakNames bonus = maximumBy (compare `on` (namesConfidence bonus)) . map (swapNames . mergePartition) . partitions
   where
     mergePartition (start, end)     = (mergeNames start, mergeNames end)
 
@@ -51,25 +63,21 @@ makeSingletonName registry n = Name [n] (classify registry n)
 partitions :: [a] -> [([a], [a])]
 partitions xs = [splitAt x xs| x <- [1 .. (length xs - 1)]]
 
-
-
-type Bonus = [String] -> [String] -> Int
-
-adjustConfidence :: Int -> Bonus -> (Name, Name) ->  Int
+adjustConfidence :: Int -> ConfidenceBonus -> (Name, Name) ->  Int
 adjustConfidence n bonus (Name ns1 cls1, Name ns2 cls2) | isGivenish cls1 && isFamilish cls2 =  9 * n + bonus ns1 ns2
-adjustConfidence n _     _                              = 9 * n
+adjustConfidence n _     _                              = n
 
-bonusGivenish :: Bonus
+bonusGivenish :: ConfidenceBonus
 bonusGivenish gs fs | length gs > length fs = 5
 bonusGivenish gs fs | length gs < length fs = -5
 bonusGivenish _  _  = 0
 
-bonusFamilish :: Bonus
+bonusFamilish :: ConfidenceBonus
 bonusFamilish gs fs | length gs < length fs = 5
 bonusFamilish gs fs | length gs > length fs = -5
 bonusFamilish _  _  = 0
 
-noBonus :: Bonus
+noBonus :: ConfidenceBonus
 noBonus _ _ = 0
 
 swapNames :: (Name, Name) -> (Name, Name)

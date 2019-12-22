@@ -57,6 +57,7 @@ sampleRegistry = makeRegistry names surnames (defaultOptions { transliterateName
       ]
 
 run = fix sampleRegistry justBreakNames
+runWith bonus = fix sampleRegistry (justBreakNamesWith bonus)
 runMaybe = fixMaybe sampleRegistry splitNames
 
 spec :: Spec
@@ -111,9 +112,13 @@ spec = do
 
       it "NNS" $ run (FullName ["Federico", "Alfredo", "Scarpa"]) `shouldBe` (GivenAndFamily ["Federico", "Alfredo"] ["Scarpa"])
       it "SNN" $ run (FullName ["Scarpa", "Federico", "Alfredo"]) `shouldBe` (GivenAndFamily ["Federico", "Alfredo"] ["Scarpa"])
+      it "SNN#familish" $ runWith bonusFamilish (FullName ["Scarpa", "Federico", "Alfredo"]) `shouldBe` (GivenAndFamily ["Federico", "Alfredo"] ["Scarpa"])
+      it "SNN#givenish" $ runWith bonusGivenish (FullName ["Scarpa", "Federico", "Alfredo"]) `shouldBe` (GivenAndFamily ["Federico", "Alfredo"] ["Scarpa"])
 
       it "NSS" $ run (FullName ["Ivana", "Feldfeber", "Kivelsky"]) `shouldBe` (GivenAndFamily ["Ivana"] ["Feldfeber", "Kivelsky"])
       it "SSN" $ run (FullName ["Feldfeber", "Kivelsky", "Ivana"]) `shouldBe` (GivenAndFamily ["Ivana"] ["Feldfeber", "Kivelsky"])
+      it "SSN#familish" $ runWith bonusFamilish (FullName ["Ivana", "Feldfeber", "Kivelsky"]) `shouldBe` (GivenAndFamily ["Ivana"] ["Feldfeber", "Kivelsky"])
+      it "SSN#givenish" $ runWith bonusGivenish (FullName ["Ivana", "Feldfeber", "Kivelsky"]) `shouldBe` (GivenAndFamily ["Ivana"] ["Feldfeber", "Kivelsky"])
 
       it "[SS]" $ runMaybe (FullName ["Bulgarelli", "Alt"]) `shouldBe` Nothing
 
@@ -122,10 +127,17 @@ spec = do
       it "AA" $ run (FullName ["Rodrigo", "Alfonso"]) `shouldBe` GivenAndFamily ["Rodrigo"] ["Alfonso"]
       it "AA" $ run (FullName ["Alfonso", "Rodrigo"]) `shouldBe` GivenAndFamily ["Alfonso"] ["Rodrigo"]
 
-      it "AAS" $ run (FullName ["Alfonso", "Rodrigo", "Trucco"]) `shouldBe` GivenAndFamily ["Alfonso", "Rodrigo"] ["Trucco"]
       it "ASA" $ run (FullName ["Rodrigo", "Trucco", "Alfonso"]) `shouldBe` GivenAndFamily ["Alfonso"] ["Rodrigo", "Trucco"]
+      it "ASA#familish" $ runWith bonusFamilish (FullName ["Rodrigo", "Trucco", "Alfonso"]) `shouldBe` GivenAndFamily ["Alfonso"] ["Rodrigo", "Trucco"]
+      it "ASA#givenish" $ runWith bonusGivenish (FullName ["Rodrigo", "Trucco", "Alfonso"]) `shouldBe` GivenAndFamily ["Alfonso"] ["Rodrigo", "Trucco"]
+
+      it "AAS" $ run (FullName ["Alfonso", "Rodrigo", "Trucco"]) `shouldBe` GivenAndFamily ["Alfonso", "Rodrigo"] ["Trucco"]
+      it "AAS#familish" $ runWith bonusFamilish (FullName ["Alfonso", "Rodrigo", "Trucco"]) `shouldBe` GivenAndFamily ["Alfonso"] ["Rodrigo", "Trucco"]
+      it "AAS#givenish" $ runWith bonusGivenish (FullName ["Alfonso", "Rodrigo", "Trucco"]) `shouldBe` GivenAndFamily ["Alfonso", "Rodrigo"] ["Trucco"]
 
       it "SAA" $ run (FullName ["Pina", "Rodrigo", "Alfonso"]) `shouldBe` GivenAndFamily ["Alfonso"] ["Pina", "Rodrigo"]
+      it "SAA#familish" $ runWith bonusFamilish (FullName ["Pina", "Rodrigo", "Alfonso"]) `shouldBe` GivenAndFamily ["Alfonso"] ["Pina", "Rodrigo"]
+      it "SAA#givenish" $ runWith bonusGivenish (FullName ["Pina", "Rodrigo", "Alfonso"]) `shouldBe` GivenAndFamily ["Rodrigo", "Alfonso"] ["Pina"]
 
       it "ANAS" $ run (FullName ["Alfonso", "Julián", "Rodrigo", "Trucco"]) `shouldBe` GivenAndFamily ["Alfonso", "Julián", "Rodrigo"] ["Trucco"]
       it "ASAN" $ run (FullName ["Rodrigo", "Trucco", "Alfonso", "Julián"]) `shouldBe` GivenAndFamily ["Julián"] ["Rodrigo", "Trucco", "Alfonso"]
