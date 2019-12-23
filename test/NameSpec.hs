@@ -1,7 +1,8 @@
 module NameSpec (spec) where
 
-import  Test.Hspec
-import  Data.PersonalName
+import Test.Hspec
+import Data.PersonalName
+import Data.PersonalName.Name (splitNamesWith, justBreakNamesWith, noBonus, bonusFamilish, bonusGivenish, ConfidenceBonus)
 
 sampleRegistry = makeRegistry names surnames (defaultOptions { transliterateNames = True })
   where

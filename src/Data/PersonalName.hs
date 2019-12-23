@@ -2,18 +2,12 @@
 
 module Data.PersonalName (
   analyze,
-  bonusFamilish,
-  bonusGivenish,
   defaultOptions,
   fix,
   fixMaybe,
   justBreakNames,
-  justBreakNamesWith,
   makeRegistry,
-  noBonus,
   splitNames,
-  splitNamesWith,
-  ConfidenceBonus,
   Class(..),
   Name(..),
   NameDivider,

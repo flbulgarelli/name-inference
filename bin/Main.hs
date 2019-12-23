@@ -8,6 +8,7 @@ import Data.Foldable (for_)
 import Data.Text as T (Text, pack, unpack, splitOn, strip, replace, toTitle, null)
 import Data.List (intercalate)
 import Data.PersonalName
+import Data.PersonalName.Name (splitNamesWith, justBreakNamesWith, noBonus, bonusFamilish, bonusGivenish, ConfidenceBonus)
 
 data Input = Input {
     givensFile :: String,
@@ -26,34 +27,34 @@ sample = Input
         long "givens"
          <> short 'g'
          <> metavar "FILE"
-         <> help "givens filename" )
+         <> help "Givens filename" )
       <*> strOption (
         long "families"
          <> short 'f'
          <> metavar "FILE"
-         <> help "families filename" )
+         <> help "Families filename" )
       <*> strOption (
         long "file"
          <> short 'F'
          <> metavar "FILE"
          <> value "--"
-         <> help "families filename" )
+         <> help "Input filename" )
       <*> strOption (
         long "output-format"
          <> short 'o'
-         <> metavar "tagged|csv|padded"
+         <> metavar "FORMAT"
          <> value "tagged"
-         <> help "output format. `tagged` by default" )
+         <> help "Output format {tagged|csv|padded}. Default is 'tagged'" )
       <*> strOption (
         long "bonus"
           <> short 'B'
-          <> metavar "no|given|family"
+          <> metavar "BONUS"
           <> value "no"
-          <> help "Try to maximize length of a name group `no` by default" )
+          <> help "Try to maximize length of a name group. Options are {no|given|family}. Default is 'no'" )
       <*> switch (
         long "transliterate"
          <> short 't'
-         <> help "transliterate names" )
+         <> help "Transliterate names before classifying them" )
       <*> switch (
         long "unknown-as-family"
          <> short 'u'
