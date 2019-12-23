@@ -67,7 +67,7 @@ sample = Input
 main :: IO ()
 main = execParser opts >>= run
   where
-    opts = info (sample <**> helper) (fullDesc <> progDesc "Classify and flip personal names")
+    opts = info (sample <**> helper) (fullDesc <> progDesc "Deterministic classifier for personal names")
 
 run :: Input -> IO ()
 run (Input givens families file outputFormat bonus transliterate unknownAsFamily breakFullNames) = do

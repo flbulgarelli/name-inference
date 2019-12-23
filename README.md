@@ -1,13 +1,14 @@
 # onomastic
-> Classify and flip personal names
+> Deterministic classifier for personal names
 
 
 ```
+$ onomastic --help
 Usage: onomastic (-g|--givens FILE) (-f|--families FILE) [-F|--file FILE]
                  [-o|--output-format FORMAT] [-B|--bonus BONUS]
                  [-t|--transliterate] [-u|--unknown-as-family]
                  [-b|--break-full-names]
-  Classify and flip personal names
+  Deterministic classifier for personal names
 
 Available options:
   -g,--givens FILE         Givens filename
@@ -27,7 +28,7 @@ Available options:
 
 ## TL;DR
 
-`onomastic` is an algorithm for classifying personal names deterministically, using given and family names lists. `onomastic` tries to minimize misclassifications, and does not inferences about ambiguous personal names unless forced to do so.
+`onomastic` is an algorithm for classifying personal names deterministically, using given and family names lists. `onomastic` tries to minimize misclassifications, and does not make inferences about ambiguous personal names unless forced to do so.
 
 Sample usage:
 
@@ -55,6 +56,15 @@ There are a lot of good packages that effectively perform this task using parser
 However, people do not always follow those conventions when they manually enter personal names. It is common to deal with lists like the following:
 
 
+```bash
+Ástor Pantaleón Piazzolla # first-name middle-name surname
+Andreu Francis            # surname first-name
+Troilo Aníbal Carmelo     # surname first-name middle-name
+Goyeneche, Roberto        # surname, first-name
+Merello, Laura Ana        # surname, first-name middle-name
+Julia, Trzenko            # first-name, surname
+```
+
 In such situations, format-based algorithms will not solve our problem. You need something that actually undestands about individual names. Although you could use a machine learning algorithm - [see this article](https://towardsdatascience.com/name-classification-with-naive-bayes-7c5e1415788a) - improper classification of personal names can be a sensible thing. Also, getting a big list of real names can turn into troubles.
 
 Because of this using a deterministic algorithm that only requires datasets of given and family names - and not just personal names - is a better approach.
@@ -64,7 +74,28 @@ Because of this using a deterministic algorithm that only requires datasets of g
 
 `onomastic` classifies personal names using given and families list, which can be obtained from different sources depending your country or location. `onomastic` is designed to classify names only when they are not ambiguous, but this restriction can be relaxed using different flags.
 
-## Usage
+## CLI Usage
+
+`onomastic` can be also used as a command-line program, which processes a personal full name per line from standard input, and prints each result to standard output:
+
+```bash
+$ onomastic --givens test/data/givens.txt  --families test/data/families.txt --bonus given -utb  <<EOF
+Ástor Pantaleón Piazzolla
+Andreu Francis
+Troilo Aníbal Carmelo
+Goyeneche, Roberto
+Merello, Laura Ana
+Julia, Trzenko
+EOF
+
+GivenAndFamily:Ástor Pantaleón,Piazzolla
+GivenAndFamily:Francis,Andreu
+GivenAndFamily:Aníbal Carmelo,Troilo
+GivenAndFamily:Roberto,Goyeneche
+GivenAndFamily:Laura Ana,Merello
+GivenAndFamily:Julia,Trzenko
+```
+
 
 ### Available options
 
@@ -123,6 +154,18 @@ Achucarro
 
 #### `-F,--file`
 
+Instead of reading personal names from standard input, they may be read from a file with a personal name per line. Example:
+
+```bash
+$ onomastic --givens test/data/givens.txt  --families test/data/families.txt  -F names.txt
+GivenAndFamily:Ástor Pantaleón,Piazzolla
+GivenAndFamily:Francis,Andreu
+GivenAndFamily:Aníbal Carmelo,Troilo
+GivenAndFamily:Goyeneche,Roberto
+GivenAndFamily:Ana,Merello Laura
+GivenAndFamily:Julia,Trzenko
+```
+
 #### `-o,--output-format`
 
 Output format {tagged|csv|padded}. Default is 'tagged'
@@ -142,7 +185,7 @@ Treat unknown names as family names
 
 Force split of ambiguous full names
 
-### Examples
+### More examples
 
 
 ```bash
