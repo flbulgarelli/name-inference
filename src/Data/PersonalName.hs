@@ -25,13 +25,13 @@ import qualified Data.Char as C
 
 
 data PersonalName
-  = GivenAndFamily [String] [String]
-  | FullName [String]
+  = GivenAndFamily ![String] ![String]
+  | FullName ![String]
   deriving (Eq, Show)
 
 analyze :: Registry -> NameDivider -> PersonalName -> Maybe (Name, Name)
 analyze registry _           (GivenAndFamily given family) = Just . swapNames $ (makeName registry given, makeName registry family)
-analyze registry divideNames (FullName names)              = divideNames . map (makeSingletonName registry) $ names
+analyze registry divideNames (FullName names)               = divideNames . map (makeSingletonName registry) $ names
 
 fixMaybe :: Registry -> NameDivider -> PersonalName -> Maybe PersonalName
 fixMaybe _        _        (FullName [])         = Nothing
